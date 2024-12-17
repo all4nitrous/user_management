@@ -32,11 +32,13 @@ services:
 
   fastapi:
     build: .
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/myappdb # Added DATABASE_URL for Alembic
     volumes:
       - ./:/myapp/
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_healthy # Wait for the database to be healthy
     networks:
       - app-network
 
@@ -73,3 +75,4 @@ volumes:
 
 networks:
   app-network:
+
