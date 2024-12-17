@@ -1,0 +1,83 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*  # Run on feature branches
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.2
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: myappdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d myappdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Set up Python environment
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 3. Install dependencies
+      - name: Install Dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Run Alembic Migrations
+      - name: Run Database Migrations
+        run: |
+          source .venv/bin/activate
+          alembic upgrade head
+
+      # 5. Run Tests
+      - name: Run Unit Tests
+        run: |
+          source .venv/bin/activate
+          pytest tests/
+
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Build Docker image
+      - name: Build Docker Image
+        run: |
+          docker build -t myapp:latest .
+
+      # 3. Verify Docker image runs
+      - name: Run Container Test
+        run: |
+          docker run --rm -d -p 8000:8000 --name testcontainer myapp:latest
+          sleep 10  # Allow time for container to start
+          curl --retry 5 --retry-delay 5 http://localhost:8000/docs
+          docker stop testcontainer
