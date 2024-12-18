@@ -6,6 +6,7 @@ from app.database import Database
 from app.dependencies import get_settings
 from app.api import invitations
 from app.utils.api_description import getDescription
+from app.api.users import router as users_router
 app = FastAPI(
     title="User Management",
     description=getDescription(),

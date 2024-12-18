@@ -2,12 +2,11 @@ from builtins import Exception, dict, str
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import Database
+from app.database import Database, async_session_maker  # Import async_session_maker
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
-from fastapi import Depends
 
 def get_settings() -> Settings:
     """Return application settings."""
@@ -25,7 +24,16 @@ async def get_db() -> AsyncSession:
             yield session
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-        
+
+async def get_db_session() -> AsyncSession:
+    """
+    Provides an AsyncSession instance for FastAPI routes.
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 

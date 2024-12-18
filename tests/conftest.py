@@ -238,3 +238,23 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+
+import pytest
+from httpx import AsyncClient
+from app.main import app  # Import your FastAPI app instance
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@pytest.fixture
+async def async_client():
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
+        yield client
+        
+@pytest.fixture
+async def db_session():
+    engine = create_async_engine(DATABASE_URL, echo=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    TestingSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async with TestingSessionLocal() as session:
+        yield session
+    await engine.dispose()       
