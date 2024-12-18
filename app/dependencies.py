@@ -1,4 +1,5 @@
 from builtins import Exception, dict, str
+from typing import AsyncGenerator  # Added import
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,15 +9,18 @@ from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
 
+
 def get_settings() -> Settings:
     """Return application settings."""
     return Settings()
+
 
 def get_email_service() -> EmailService:
     template_manager = TemplateManager()
     return EmailService(template_manager=template_manager)
 
-async def get_db() -> AsyncSession:
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:  # Fixed return type
     """Dependency that provides a database session for each request."""
     async_session_factory = Database.get_session_factory()
     async with async_session_factory() as session:
@@ -25,7 +29,8 @@ async def get_db() -> AsyncSession:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-async def get_db_session() -> AsyncSession:
+
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:  # Fixed return type
     """
     Provides an AsyncSession instance for FastAPI routes.
     """
@@ -35,7 +40,9 @@ async def get_db_session() -> AsyncSession:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -52,9 +59,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return {"user_id": user_id, "role": user_role}
 
+
 def require_role(role: str):
     def role_checker(current_user: dict = Depends(get_current_user)):
         if current_user["role"] not in role:
             raise HTTPException(status_code=403, detail="Operation not permitted")
         return current_user
+
     return role_checker
