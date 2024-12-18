@@ -18,7 +18,7 @@ services:
   fastapi:
     build: .
     environment:
-      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/myappdb
+      DATABASE_URL: postgresql+asyncpg://admin:password@postgres:5432/myappdb
     depends_on:
       postgres:
         condition: service_healthy  # Wait for PostgreSQL to be healthy
