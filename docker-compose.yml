@@ -19,6 +19,7 @@ services:
     build: .
     environment:
       DATABASE_URL: postgresql+asyncpg://admin:password@postgres:5432/myappdb
+      ATLASSIAN_API_TOKEN: 3add17h8e9129f12786c222E  # Added Atlassian API Token
     depends_on:
       postgres:
         condition: service_healthy  # Wait for PostgreSQL to be healthy
